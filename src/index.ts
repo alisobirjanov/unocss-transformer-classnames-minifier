@@ -1,35 +1,157 @@
-export const defaultChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+import type { SourceCodeTransformer } from '@unocss/core'
+import { escapeRegExp, expandVariantGroup } from '@unocss/core'
 
-export function variationsChars(chars: string = defaultChars) {
-  const variation = [-1]
-  const charsLastIdx = chars.length - 1
+import { variationsChars } from './utils'
 
-  const changeArrayElemsFromIdxToEnd = (idx: number) => {
-    for (let i = idx; i < variation.length; i++)
-      variation[i] = 0
-  }
+export interface CompileClassOptions {
+  /**
+   * Trigger regex literal. The default trigger regex literal matches `:uno:`,
+   * for example: `<div class=":uno: font-bold text-white">`.
+   *
+   * @example
+   * The trigger additionally allows defining a capture group named `name`, which
+   * allows custom class names. One possible regex would be:
+   *
+   * ```
+   * export default defineConfig({
+   *   transformers: [
+   *     transformerCompileClass({
+   *       trigger: /(["'`]):uno(?:-)?(?<name>[^\s\1]+)?:\s([^\1]*?)\1/g
+   *     }),
+   *   ],
+   * })
+   * ```
+   *
+   * This regular expression matches `:uno-MYNAME:` and uses `MYNAME` in
+   * combination with the class prefix as the final class name, for example:
+   * `.uno-MYNAME`. It should be noted that the regex literal needs to include
+   * the global flag `/g`.
+   *
+   * @note
+   * This parameter is backwards compatible. It accepts string only trigger
+   * words, like `:uno:` or a regex literal.
+   *
+   * @default `/(["'`]):uno(?:-)?(?<name>[^\s\1]+)?:\s([^\1]*?)\1/g`
+   */
+  trigger?: string | RegExp
 
-  const getVariation = () => {
-    let idx = 0
-    for (let i = variation.length - 1; i >= 0; i--) {
-      if (variation[i] !== charsLastIdx) {
-        variation[i] += 1
-        idx = i + 1
-        break
-      }
-      if (i === 0) {
-        variation.push(0)
-        break
-      }
-    }
-    changeArrayElemsFromIdxToEnd(idx)
-    return variation
-  }
+  /**
+   * Prefix for compile class name
+   * @default 'uno-'
+   */
+  classPrefix?: string
 
-  return getVariation
+  /**
+   * Hash function
+   */
+  hashFn?: (str: string) => string
+
+  /**
+   * Allow add hash to class name even if the class name is explicitly defined
+   *
+   * @default false
+   */
+  alwaysHash?: boolean
+
+  /**
+   * Left unknown classes inside the string
+   *
+   * @default true
+   */
+  keepUnknown?: boolean
+
+  /**
+   * The layer name of generated rules
+   */
+  layer?: string
 }
 
-const getVar = variationsChars()
+export default function transformerCompileClass(options: CompileClassOptions = {}): SourceCodeTransformer {
+  const {
+    trigger = /(["'`]):uno(?:-)?(?<name>[^\s\1]+)?:\s([^\1]*?)\1/g,
+    classPrefix = 'uno-',
+    hashFn = hash,
+    keepUnknown = true,
+    alwaysHash = false,
+  } = options
+  // #2866
+  const compiledClass = new Set()
 
-for (let i = 0; i < 100; i++)
-  getVar()
+  // Provides backwards compatibility. We either accept a trigger string which
+  // gets turned into a regexp (like previously) or a regex literal directly.
+  const regexp = typeof trigger === 'string'
+    ? RegExp(`(["'\`])${escapeRegExp(trigger)}\\s([^\\1]*?)\\1`, 'g')
+    : trigger
+
+  return {
+    name: '@unocss/transformer-compile-class-2',
+    enforce: 'pre',
+    async transform(s, _, { uno, tokens, invalidate }) {
+      const matches = [...s.original.matchAll(regexp)]
+      if (!matches.length)
+        return
+
+      const size = compiledClass.size
+      for (const match of matches) {
+        let body = (match.length === 4 && match.groups)
+          ? expandVariantGroup(match[3].trim())
+          : expandVariantGroup(match[2].trim())
+
+        const start = match.index!
+        const replacements = []
+
+        if (keepUnknown) {
+          const result = await Promise.all(body.split(/\s+/).filter(Boolean).map(async i => [i, !!await uno.parseToken(i)] as const))
+          const known = result.filter(([, matched]) => matched).map(([i]) => i)
+          const unknown = result.filter(([, matched]) => !matched).map(([i]) => i)
+          replacements.push(...unknown)
+          body = known.join(' ')
+        }
+
+        if (body) {
+          body = body.split(/\s+/).sort().join(' ')
+          let hash: string
+          let explicitName = false
+
+          if (match.groups && match.groups.name) {
+            hash = match.groups.name
+            if (alwaysHash)
+              hash += `-${hashFn(body)}`
+            explicitName = true
+          }
+          else {
+            hash = hashFn(body)
+          }
+          const className = `${classPrefix}${hash}`
+
+          if (tokens && tokens.has(className) && explicitName) {
+            const existing = uno.config.shortcuts.find(i => i[0] === className)
+            if (existing && existing[1] !== body)
+              throw new Error(`Duplicated compile class name "${className}". One is "${body}" and the other is "${existing[1]}". Please choose different class name or set 'alwaysHash' to 'true'.`)
+          }
+
+          compiledClass.add(className)
+          replacements.unshift(className)
+          if (options.layer)
+            uno.config.shortcuts.push([className, body, { layer: options.layer }])
+          else
+            uno.config.shortcuts.push([className, body])
+
+          if (tokens)
+            tokens.add(className)
+        }
+
+        s.overwrite(start + 1, start + match[0].length - 1, replacements.join(' '))
+      }
+
+      if (compiledClass.size > size)
+        invalidate()
+    },
+  }
+}
+
+const getVari = variationsChars()
+
+function hash(str: string) {
+  return getVari()
+}
