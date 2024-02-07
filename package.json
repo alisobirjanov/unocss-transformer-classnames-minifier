@@ -37,5 +37,8 @@
     "typescript": "^5.3.3",
     "unbuild": "^2.0.0",
     "vitest": "^1.1.0"
+  },
+  "dependencies": {
+    "@unocss/core": "^0.58.5"
   }
 }
