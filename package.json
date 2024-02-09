@@ -1,5 +1,5 @@
 {
-  "name": "variations-chars",
+  "name": "unocss-transformer-classnames-minifier",
   "type": "module",
   "version": "0.0.1",
   "keywords": [],
@@ -26,7 +26,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "vitest",
-    "test:update": "vitest -u"
+    "play": "npm -C playground run dev"
+  },
+  "dependencies": {
+    "@unocss/core": "^0.58.5"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.4.6",
@@ -34,11 +37,16 @@
     "bumpp": "^9.2.1",
     "eslint": "^8.55.0",
     "esno": "^4.0.0",
+    "lint-staged": "^15.2.2",
+    "simple-git-hooks": "^2.9.0",
     "typescript": "^5.3.3",
     "unbuild": "^2.0.0",
     "vitest": "^1.1.0"
   },
-  "dependencies": {
-    "@unocss/core": "^0.58.5"
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
   }
 }
