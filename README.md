@@ -1,6 +1,6 @@
 # unocss-transformer-classnames-minifier
 
-Transform minifier UnoCSS classnames.
+Transform UnoCSS classnames minifier.
 
 ## Install
 ```shell
