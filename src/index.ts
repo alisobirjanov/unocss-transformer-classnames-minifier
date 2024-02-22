@@ -1,7 +1,7 @@
 import type { SourceCodeTransformer } from '@unocss/core'
 import { escapeRegExp, expandVariantGroup } from '@unocss/core'
 
-import { variationsChars } from './utils'
+import { charCombinations } from './utils'
 
 export interface CompileClassOptions {
   /**
@@ -46,17 +46,10 @@ export interface CompileClassOptions {
   layer?: string
 }
 
-// const regexp = RegExp(`(["'\`])${escapeRegExp('')}\\s([^\\1]*?)\\1`, 'g')
-// const regexp = /(["'\`])\s([^\1]*?)\1/g
-// const regexp = /(["'`]):uno(?:-)?:\s([^\1]*?)\1/g
-// const regexp = /(["'`])(.*?)\1/g
-// const regexp = /(["'\`])([^\\1]*?)\1/g
-// /(["'\`])\s([^\1]*?)\1/g
-
 export default function transformerClassnamesMinifier(options: CompileClassOptions = {}): SourceCodeTransformer {
   const {
     trigger = '',
-    hashFn = variationsChars(),
+    hashFn = charCombinations(),
   } = options
 
   const compiledClass = new Map()
@@ -100,8 +93,7 @@ export default function transformerClassnamesMinifier(options: CompileClassOptio
 
           replacements.push(className)
         })
-
-        // replacements.push(...body)
+        
         s.overwrite(start + 1, start + match[0].length - 1, replacements.join(' '))
       }
     },
