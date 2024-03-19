@@ -2,6 +2,12 @@
   "name": "unocss-transformer-classnames-minifier",
   "type": "module",
   "version": "0.0.1",
+  "private": false,
+  "homepage": "https://github.com/alisobirjanov/unocss-transformer-classnames-minifier#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alisobirjanov/unocss-transformer-classnames-minifier.git"
+  },
   "keywords": [],
   "sideEffects": false,
   "exports": {
