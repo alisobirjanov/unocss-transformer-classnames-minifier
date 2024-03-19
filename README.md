@@ -15,7 +15,7 @@ import transformerClassnamesMinifier from 'unocss-transformer-classnames-minifie
 export default defineConfig({
   // ...
   transformers: [
-    transformerAlias(),
+    transformerClassnamesMinifier(),
   ],
 })
 ```
