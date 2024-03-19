@@ -43,8 +43,8 @@ transformerClassnamesMinifier({
 
 interface KeepOption {
   /**
-   * 
-   * @default ''
+   * Special prefix to avoid UnoCSS transforming your code.
+   * @default ':uno:'
    */
   trigger?: string
   /**
