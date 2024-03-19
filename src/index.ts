@@ -5,33 +5,8 @@ import { charCombinations } from './utils'
 
 export interface CompileClassOptions {
   /**
-   * Trigger regex literal. The default trigger regex literal matches `:uno:`,
-   * for example: `<div class=":uno: font-bold text-white">`.
-   *
-   * @example
-   * The trigger additionally allows defining a capture group named `name`, which
-   * allows custom class names. One possible regex would be:
-   *
-   * ```
-   * export default defineConfig({
-   *   transformers: [
-   *     transformerCompileClass({
-   *       trigger: /(["'`]):uno(?:-)?(?<name>[^\s\1]+)?:\s([^\1]*?)\1/g
-   *     }),
-   *   ],
-   * })
-   * ```
-   *
-   * This regular expression matches `:uno-MYNAME:` and uses `MYNAME` in
-   * combination with the class prefix as the final class name, for example:
-   * `.uno-MYNAME`. It should be noted that the regex literal needs to include
-   * the global flag `/g`.
-   *
-   * @note
-   * This parameter is backwards compatible. It accepts string only trigger
-   * words, like `:uno:` or a regex literal.
-   *
-   * @default `/(["'`]):uno(?:-)?(?<name>[^\s\1]+)?:\s([^\1]*?)\1/g`
+   * Special prefix to avoid UnoCSS transforming your code.
+   * @default ':uno:'
    */
   trigger?: string
 
@@ -48,7 +23,7 @@ export interface CompileClassOptions {
 
 export default function transformerClassnamesMinifier(options: CompileClassOptions = {}): SourceCodeTransformer {
   const {
-    trigger = '',
+    trigger = ':uno:',
     hashFn = charCombinations(),
   } = options
 
@@ -93,7 +68,7 @@ export default function transformerClassnamesMinifier(options: CompileClassOptio
 
           replacements.push(className)
         })
-        
+
         s.overwrite(start + 1, start + match[0].length - 1, replacements.join(' '))
       }
     },
