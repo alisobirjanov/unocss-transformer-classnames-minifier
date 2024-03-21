@@ -23,7 +23,7 @@ export default defineConfig({
 ## Usage
 
 ```html
-<button class="px-2 py-3 bg-blue-500 text-white rounded"></button>
+<button class=":uno: px-2 py-3 bg-blue-500 text-white rounded"></button>
 ```
 
 Will be transformed to:
