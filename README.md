@@ -4,7 +4,7 @@ Transform UnoCSS classnames minifier.
 
 ## Install
 ```shell
-pnpm i -D unocss-transformer-classnames-minifier
+pnpm add -D unocss-transformer-classnames-minifier
 ```
 
 ```ts
